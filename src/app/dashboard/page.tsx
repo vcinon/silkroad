@@ -1,13 +1,35 @@
-import { getUsers } from '@/lib/data';
+
+"use client"
+
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { User } from '@/lib/data';
 import { UserManagementClient } from '../admin/dashboard/_components/user-management-client';
+import { Loader2 } from 'lucide-react';
 
-export const revalidate = 0; // Ensure data is fresh
+export default function DashboardPage() {
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [loading, setLoading] = useState(true);
+    const router = useRouter();
 
-export default async function DashboardPage() {
-  // We fetch initial data on the server.
-  // The client component will handle subsequent fetches and mutations.
-  const users = getUsers();
+    useEffect(() => {
+        const token = localStorage.getItem('admin-token');
+        if (token) {
+            setIsAuthenticated(true);
+        } else {
+            router.replace('/');
+        }
+        setLoading(false);
+    }, [router]);
 
+    if (loading || !isAuthenticated) {
+        return (
+            <div className="flex h-screen w-full items-center justify-center">
+                <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+        );
+    }
+  
   return (
     <div className="container mx-auto px-4 md:px-6 py-8">
       <div className="mb-6">
@@ -17,7 +39,7 @@ export default async function DashboardPage() {
         </p>
       </div>
       
-      <UserManagementClient initialUsers={users} />
+      <UserManagementClient initialUsers={[]} />
     </div>
   );
 }
