@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getServiceStatus, findUserById } from '@/lib/data';
+import { getServiceStatus, findUserById, deleteUser } from '@/lib/data';
 
 export async function GET(request: Request, { params }: { params: { user_id: string } }) {
   if (!getServiceStatus()) {
@@ -16,7 +16,8 @@ export async function GET(request: Request, { params }: { params: { user_id: str
   }
   
   if (user.expiresAt && new Date(user.expiresAt) < new Date()) {
-      return NextResponse.json({ status: 'error', message: 'User account has expired.' }, { status: 403 });
+      await deleteUser(user.id);
+      return NextResponse.json({ status: 'error', message: 'User account has expired and has been deleted.' }, { status: 403 });
   }
 
   const { password, ...userWithoutPassword } = user;
