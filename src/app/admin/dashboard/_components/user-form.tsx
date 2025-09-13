@@ -25,19 +25,16 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon } from "lucide-react";
-import { Calendar } from "@/components/ui/calendar";
-import { cn } from "@/lib/utils";
-import { format } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { getExpirationDate, getExpirationPreset } from "@/lib/time";
+
 
 const formSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters."),
   password: z.string().optional(),
   role: z.enum(["user", "admin"]),
   enabled: z.boolean(),
-  expiresAt: z.date().optional(),
+  duration: z.string().optional(),
 });
 
 type UserFormValues = z.infer<typeof formSchema>;
@@ -50,6 +47,15 @@ interface UserFormProps {
   adminToken: string | null;
 }
 
+const durationOptions = [
+  { value: 'never', label: 'Never' },
+  { value: '1d', label: '1 Day' },
+  { value: '3d', label: '3 Days' },
+  { value: '1w', label: '1 Week' },
+  { value: '2w', label: '2 Weeks' },
+  { value: '1m', label: '1 Month' },
+];
+
 export function UserForm({ isOpen, setIsOpen, user, onFinished, adminToken }: UserFormProps) {
   const { toast } = useToast();
   const form = useForm<UserFormValues>({
@@ -59,7 +65,7 @@ export function UserForm({ isOpen, setIsOpen, user, onFinished, adminToken }: Us
       password: "",
       role: "user",
       enabled: true,
-      expiresAt: undefined,
+      duration: "never",
     },
   });
 
@@ -70,7 +76,7 @@ export function UserForm({ isOpen, setIsOpen, user, onFinished, adminToken }: Us
         password: "", // Don't pre-fill password
         role: user.role,
         enabled: user.enabled,
-        expiresAt: user.expiresAt ? new Date(user.expiresAt) : undefined,
+        duration: getExpirationPreset(user.expiresAt),
       });
     } else {
       form.reset({
@@ -78,7 +84,7 @@ export function UserForm({ isOpen, setIsOpen, user, onFinished, adminToken }: Us
         password: "",
         role: "user",
         enabled: true,
-        expiresAt: undefined,
+        duration: "1m", // Default to 1 month for new users
       });
     }
   }, [user, isOpen, form]);
@@ -93,11 +99,15 @@ export function UserForm({ isOpen, setIsOpen, user, onFinished, adminToken }: Us
     const url = isEdit ? `/api/admin/users/${user.id}` : '/api/admin/users';
     const method = isEdit ? 'PUT' : 'POST';
 
+    const expiresAt = getExpirationDate(values.duration);
+
     // For edits, if password is empty, don't include it in the payload.
     const payload: any = {
         ...values,
-        expiresAt: values.expiresAt?.toISOString()
+        expiresAt: expiresAt?.toISOString() ?? null,
     };
+    delete payload.duration;
+
     if (isEdit && !values.password) {
       delete payload.password;
     } else if (!isEdit && !values.password) {
@@ -179,39 +189,24 @@ export function UserForm({ isOpen, setIsOpen, user, onFinished, adminToken }: Us
             />
             <FormField
               control={form.control}
-              name="expiresAt"
+              name="duration"
               render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>Expiration Date</FormLabel>
-                   <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          disabled={(date) => date < new Date()}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
+                <FormItem>
+                  <FormLabel>Account Expires In</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a duration" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {durationOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
