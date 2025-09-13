@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Shield } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const Header = () => {
   return (
@@ -9,10 +10,13 @@ const Header = () => {
           <Shield className="h-6 w-6 text-primary" />
           <span className="text-lg font-headline">ScriptGuardian</span>
         </Link>
-        <nav className="flex items-center gap-4">
-          <Link href="/status" className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground">
-            Status
-          </Link>
+        <nav className="flex items-center gap-2">
+          <Button variant="ghost" asChild>
+            <Link href="/status">Status</Link>
+          </Button>
+          <Button asChild>
+            <Link href="/admin">Admin Login</Link>
+          </Button>
         </nav>
       </div>
     </header>

@@ -1,7 +1,10 @@
 export type User = {
   id: string;
+  username: string;
+  password?: string; // Stored in-memory for this prototype. In production, use hashed passwords.
   enabled: boolean;
   role: 'user' | 'admin';
+  expiresAt?: string; // ISO 8601 date string
 };
 
 type AppState = {
@@ -13,10 +16,9 @@ type AppState = {
 const state: AppState = {
   isServiceEnabled: true,
   users: [
-    { id: 'user123', enabled: true, role: 'user' },
-    { id: 'user456', enabled: false, role: 'user' },
-    { id: 'admin-user', enabled: true, role: 'admin' },
-    { id: 'demoted-admin', enabled: true, role: 'user' },
+    { id: 'user123', username: 'alpha', enabled: true, role: 'user', expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString() },
+    { id: 'user456', username: 'beta', enabled: false, role: 'user' },
+    { id: 'admin-user', username: 'admin', enabled: true, role: 'admin' },
   ],
 };
 
@@ -30,6 +32,17 @@ export const toggleServiceStatus = () => {
 // --- User Management ---
 export const getUsers = () => state.users;
 export const findUserById = (userId: string) => state.users.find(u => u.id === userId);
+export const findUserByUsername = (username: string) => state.users.find(u => u.username === username);
+
+
+export const addUser = (userData: Omit<User, 'id'>): User => {
+    const newUser: User = {
+        ...userData,
+        id: `user${Date.now()}`,
+    };
+    state.users.push(newUser);
+    return newUser;
+};
 
 export const updateUser = (userId: string, updates: Partial<Omit<User, 'id'>>) => {
   const userIndex = state.users.findIndex(u => u.id === userId);
@@ -37,4 +50,12 @@ export const updateUser = (userId: string, updates: Partial<Omit<User, 'id'>>) =
 
   state.users[userIndex] = { ...state.users[userIndex], ...updates };
   return state.users[userIndex];
+};
+
+export const deleteUser = (userId: string): boolean => {
+    const userIndex = state.users.findIndex(u => u.id === userId);
+    if (userIndex === -1) return false;
+
+    state.users.splice(userIndex, 1);
+    return true;
 };

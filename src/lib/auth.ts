@@ -1,9 +1,8 @@
-import { headers } from 'next/headers';
 
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN || 'secret-admin-token';
 
-export const checkAdminAuth = (): boolean => {
-  const authHeader = headers().get('Authorization');
+export const checkAdminAuth = async (request: Request): Promise<boolean> => {
+  const authHeader = request.headers.get('Authorization');
   if (!authHeader) {
     return false;
   }
