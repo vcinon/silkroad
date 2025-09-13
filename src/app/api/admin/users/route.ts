@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { checkAdminAuth } from '@/lib/auth';
 import { getUsers, addUser, User, updateUser } from '@/lib/data';
 import { z } from 'zod';
+import { sendTelegramNotification } from '@/lib/telegram';
+import { format } from 'date-fns';
 
 const userSchema = z.object({
   username: z.string().min(3),
@@ -47,6 +49,16 @@ export async function POST(request: Request) {
   const newUser = await addUser(validation.data as Omit<User, 'id'>);
   if (!newUser) {
     return NextResponse.json({ message: 'Failed to create user. The username might already exist.' }, { status: 500 });
+  }
+
+  // Send Telegram notification
+  try {
+    const expirationText = newUser.expiresAt ? format(new Date(newUser.expiresAt), 'PPP') : 'Never';
+    const message = `*New User Created* ✨\n\n*Username:* \`${newUser.username}\`\n*Role:* ${newUser.role}\n*Expires:* ${expirationText}`;
+    await sendTelegramNotification(message);
+  } catch (error) {
+      console.error("Failed to send Telegram notification:", error);
+      // We don't want to fail the request if the notification fails, so we just log it.
   }
   
   const { password, ...userWithoutPassword } = newUser;
