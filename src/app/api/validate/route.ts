@@ -27,7 +27,7 @@ export async function POST(request: Request) {
   }
 
   if (parsed.data.userId) {
-    const user = findUserById(parsed.data.userId);
+    const user = await findUserById(parsed.data.userId);
     if (!user || !user.enabled) {
       return NextResponse.json({ status: 'error', message: 'User is not authorized or disabled.' }, { status: 403 });
     }

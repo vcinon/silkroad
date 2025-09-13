@@ -17,7 +17,7 @@ export async function GET(request: Request, { params }: { params: { user_id: str
     if (!auth) {
         return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
-    const user = findUserById(params.user_id);
+    const user = await findUserById(params.user_id);
     if (!user) {
         return NextResponse.json({ message: 'User not found' }, { status: 404 });
     }
@@ -32,8 +32,8 @@ export async function PUT(request: Request, { params }: { params: { user_id: str
   if (!auth) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
-  const user = findUserById(params.user_id);
-  if (!user) {
+  const userExists = await findUserById(params.user_id);
+  if (!userExists) {
     return NextResponse.json({ message: 'User not found' }, { status: 404 });
   }
 
@@ -49,7 +49,7 @@ export async function PUT(request: Request, { params }: { params: { user_id: str
     delete updates.password;
   }
   
-  const updatedUser = updateUser(params.user_id, updates as Partial<Omit<User, 'id'>>);
+  const updatedUser = await updateUser(params.user_id, updates as Partial<Omit<User, 'id'>>);
 
   if (!updatedUser) {
     return NextResponse.json({ message: 'Failed to update user' }, { status: 500 });
@@ -65,9 +65,9 @@ export async function DELETE(request: Request, { params }: { params: { user_id: 
     if (!auth) {
         return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
     }
-    const success = deleteUser(params.user_id);
+    const success = await deleteUser(params.user_id);
     if (!success) {
-        return NextResponse.json({ message: 'User not found' }, { status: 404 });
+        return NextResponse.json({ message: 'User not found or failed to delete' }, { status: 404 });
     }
     return NextResponse.json({ message: 'User deleted successfully' });
 }

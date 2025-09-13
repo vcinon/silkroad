@@ -18,11 +18,12 @@ export async function GET(request: Request) {
   if (!auth) {
     return NextResponse.json({ message: 'Unauthorized' }, { status: 401 });
   }
-  const users = getUsers().map(u => {
+  const users = await getUsers();
+  const usersWithoutPassword = users.map(u => {
       const { password, ...userWithoutPassword } = u;
       return userWithoutPassword;
   });
-  return NextResponse.json({ users });
+  return NextResponse.json({ users: usersWithoutPassword });
 }
 
 // CREATE a new user
@@ -43,7 +44,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: 'Password is required for new users' }, { status: 400 });
   }
 
-  const newUser = addUser(validation.data as Omit<User, 'id'>);
+  const newUser = await addUser(validation.data as Omit<User, 'id'>);
+  if (!newUser) {
+    return NextResponse.json({ message: 'Failed to create user. The username might already exist.' }, { status: 500 });
+  }
+  
   const { password, ...userWithoutPassword } = newUser;
 
   return NextResponse.json({ user: userWithoutPassword }, { status: 201 });

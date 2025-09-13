@@ -5,7 +5,7 @@ export async function GET(request: Request, { params }: { params: { user_id: str
   if (!getServiceStatus()) {
     return NextResponse.json({ status: 'error', message: 'Service is currently disabled by an administrator.' }, { status: 503 });
   }
-  const user = findUserById(params.user_id);
+  const user = await findUserById(params.user_id);
   
   if (!user) {
     return NextResponse.json({ status: 'error', message: 'User not found.' }, { status: 404 });

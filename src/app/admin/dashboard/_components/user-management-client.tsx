@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { User } from '@/lib/data';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -26,9 +26,11 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export function UserManagementClient({ initialUsers }: { initialUsers: User[] }) {
   const [users, setUsers] = useState<User[]>(initialUsers);
+  const [loading, setLoading] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isConfirmDeleteDialogOpen, setIsConfirmDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -42,8 +44,9 @@ export function UserManagementClient({ initialUsers }: { initialUsers: User[] })
     setAdminToken(token);
   }, []);
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     if (!adminToken) return;
+    setLoading(true);
     try {
       const response = await fetch('/api/admin/users', {
         headers: { 'Authorization': `Bearer ${adminToken}` }
@@ -56,14 +59,18 @@ export function UserManagementClient({ initialUsers }: { initialUsers: User[] })
       }
     } catch (error) {
       toast({ title: "Error", description: "An unexpected error occurred.", variant: "destructive" });
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [adminToken, toast]);
   
   useEffect(() => {
     if (adminToken) {
       fetchUsers();
+    } else {
+        setLoading(false);
     }
-  }, [adminToken]);
+  }, [adminToken, fetchUsers]);
 
   const handleEdit = (user: User) => {
     setSelectedUser(user);
@@ -123,7 +130,17 @@ export function UserManagementClient({ initialUsers }: { initialUsers: User[] })
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((user) => (
+              {loading ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell><Skeleton className="h-5 w-24" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-16" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-20" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-28" /></TableCell>
+                    <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
+                  </TableRow>
+                ))
+              ) : users.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell className="font-medium">{user.username}</TableCell>
                   <TableCell>
@@ -165,7 +182,7 @@ export function UserManagementClient({ initialUsers }: { initialUsers: User[] })
               ))}
             </TableBody>
           </Table>
-          {users.length === 0 && (
+          {!loading && users.length === 0 && (
             <div className="text-center p-8 text-muted-foreground">
               No users found.
             </div>

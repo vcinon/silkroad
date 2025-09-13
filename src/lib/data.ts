@@ -1,25 +1,22 @@
+import { supabase } from './supabase';
+
 export type User = {
   id: string;
   username: string;
-  password?: string; // Stored in-memory for this prototype. In production, use hashed passwords.
+  password?: string;
   enabled: boolean;
   role: 'user' | 'admin';
-  expiresAt?: string; // ISO 8601 date string
+  expires_at?: string; // ISO 8601 date string
+  expiresAt?: string; // Keep this for compatibility with the form
 };
 
 type AppState = {
   isServiceEnabled: boolean;
-  users: User[];
 };
 
-// In-memory store
+// In-memory store for service status only
 const state: AppState = {
   isServiceEnabled: true,
-  users: [
-    { id: 'user123', username: 'alpha', enabled: true, role: 'user', expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString() },
-    { id: 'user456', username: 'beta', enabled: false, role: 'user' },
-    { id: 'admin-user', username: 'admin', enabled: true, role: 'admin' },
-  ],
 };
 
 // --- Service Management ---
@@ -29,33 +26,96 @@ export const toggleServiceStatus = () => {
   return state.isServiceEnabled;
 };
 
-// --- User Management ---
-export const getUsers = () => state.users;
-export const findUserById = (userId: string) => state.users.find(u => u.id === userId);
-export const findUserByUsername = (username: string) => state.users.find(u => u.username === username);
-
-
-export const addUser = (userData: Omit<User, 'id'>): User => {
-    const newUser: User = {
-        ...userData,
-        id: `user${Date.now()}`,
-    };
-    state.users.push(newUser);
-    return newUser;
+// --- User Management (Supabase) ---
+const fromUser = (user: any): User => {
+  if (!user) return user;
+  const { expires_at, ...rest } = user;
+  return {
+    ...rest,
+    expiresAt: expires_at,
+  };
 };
 
-export const updateUser = (userId: string, updates: Partial<Omit<User, 'id'>>) => {
-  const userIndex = state.users.findIndex(u => u.id === userId);
-  if (userIndex === -1) return null;
-
-  state.users[userIndex] = { ...state.users[userIndex], ...updates };
-  return state.users[userIndex];
+export const getUsers = async (): Promise<User[]> => {
+  const { data, error } = await supabase.from('users').select('*').order('username', { ascending: true });
+  if (error) {
+    console.error('Error fetching users:', error);
+    return [];
+  }
+  return data.map(fromUser);
 };
 
-export const deleteUser = (userId: string): boolean => {
-    const userIndex = state.users.findIndex(u => u.id === userId);
-    if (userIndex === -1) return false;
+export const findUserById = async (userId: string): Promise<User | null> => {
+  const { data, error } = await supabase.from('users').select('*').eq('id', userId).single();
+  if (error) {
+    // .single() throws an error if no row is found, which is expected.
+    if (error.code !== 'PGRST116') {
+        console.error('Error finding user by ID:', error);
+    }
+    return null;
+  }
+  return fromUser(data);
+};
 
-    state.users.splice(userIndex, 1);
-    return true;
+export const findUserByUsername = async (username: string): Promise<User | null> => {
+    const { data, error } = await supabase.from('users').select('*').eq('username', username).single();
+    if (error) {
+        if (error.code !== 'PGRST116') {
+            console.error('Error finding user by username:', error);
+        }
+        return null;
+    }
+    return fromUser(data);
+};
+
+export const addUser = async (userData: Omit<User, 'id'>): Promise<User | null> => {
+    const { data, error } = await supabase
+      .from('users')
+      .insert([
+        { 
+          username: userData.username,
+          password: userData.password,
+          role: userData.role,
+          enabled: userData.enabled,
+          expires_at: userData.expiresAt,
+        },
+      ])
+      .select()
+      .single();
+
+    if (error) {
+        console.error('Error adding user:', error);
+        return null;
+    }
+    return fromUser(data);
+};
+
+export const updateUser = async (userId: string, updates: Partial<Omit<User, 'id'>>): Promise<User | null> => {
+  const { expiresAt, ...rest } = updates;
+  const dbUpdates: any = { ...rest };
+  if (expiresAt !== undefined) {
+    dbUpdates.expires_at = expiresAt;
+  }
+
+  const { data, error } = await supabase
+    .from('users')
+    .update(dbUpdates)
+    .eq('id', userId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error updating user:', error);
+    return null;
+  }
+  return fromUser(data);
+};
+
+export const deleteUser = async (userId: string): Promise<boolean> => {
+  const { error } = await supabase.from('users').delete().eq('id', userId);
+  if (error) {
+    console.error('Error deleting user:', error);
+    return false;
+  }
+  return true;
 };
