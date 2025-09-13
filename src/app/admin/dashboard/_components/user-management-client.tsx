@@ -45,7 +45,7 @@ export function UserManagementClient({ initialUsers }: { initialUsers: User[] })
   const fetchUsers = async () => {
     if (!adminToken) return;
     try {
-      const response = await fetch('/admin/users', {
+      const response = await fetch('/api/admin/users', {
         headers: { 'Authorization': `Bearer ${adminToken}` }
       });
       if (response.ok) {
@@ -58,6 +58,12 @@ export function UserManagementClient({ initialUsers }: { initialUsers: User[] })
       toast({ title: "Error", description: "An unexpected error occurred.", variant: "destructive" });
     }
   };
+  
+  useEffect(() => {
+    if (adminToken) {
+      fetchUsers();
+    }
+  }, [adminToken]);
 
   const handleEdit = (user: User) => {
     setSelectedUser(user);
@@ -77,7 +83,7 @@ export function UserManagementClient({ initialUsers }: { initialUsers: User[] })
   const handleDeleteConfirm = async () => {
     if (!userToDelete || !adminToken) return;
     try {
-      const response = await fetch(`/admin/users/${userToDelete.id}`, {
+      const response = await fetch(`/api/admin/users/${userToDelete.id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${adminToken}` }
       });

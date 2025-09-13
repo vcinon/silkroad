@@ -90,7 +90,7 @@ export function UserForm({ isOpen, setIsOpen, user, onFinished, adminToken }: Us
     }
 
     const isEdit = !!user;
-    const url = isEdit ? `/admin/users/${user.id}` : '/admin/users';
+    const url = isEdit ? `/api/admin/users/${user.id}` : '/api/admin/users';
     const method = isEdit ? 'PUT' : 'POST';
 
     // For edits, if password is empty, don't include it in the payload.

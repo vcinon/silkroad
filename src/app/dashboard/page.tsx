@@ -1,9 +1,9 @@
 import { getUsers } from '@/lib/data';
-import { UserManagementClient } from './_components/user-management-client';
+import { UserManagementClient } from '../admin/dashboard/_components/user-management-client';
 
 export const revalidate = 0; // Ensure data is fresh
 
-export default async function AdminDashboardPage() {
+export default async function DashboardPage() {
   // We fetch initial data on the server.
   // The client component will handle subsequent fetches and mutations.
   const users = getUsers();

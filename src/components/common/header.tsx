@@ -12,7 +12,7 @@ const Header = () => {
         </Link>
         <nav className="flex items-center gap-2">
           <Button asChild>
-            <Link href="/admin/dashboard">Dashboard</Link>
+            <Link href="/dashboard">Dashboard</Link>
           </Button>
         </nav>
       </div>

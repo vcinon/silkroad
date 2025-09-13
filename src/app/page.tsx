@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, LogIn } from "lucide-react";
 
-export default function HomePage() {
+export default function AdminLoginPage() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -41,7 +41,7 @@ export default function HomePage() {
           title: "Login Successful",
           description: "Redirecting to admin dashboard...",
         });
-        router.push("/admin/dashboard");
+        router.push("/dashboard");
       } else {
         const { message } = await response.json();
         toast({
