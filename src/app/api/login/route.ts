@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { findUserByUsername, deleteUser } from '@/lib/data';
+import { sendTelegramNotification } from '@/lib/telegram';
 import { z } from 'zod';
 
 const loginSchema = z.object({
@@ -38,6 +39,16 @@ export async function POST(request: Request) {
   }
 
   const { password: _, ...userWithoutPassword } = user;
+
+  
+  // Send Telegram notification for successful login
+  try {
+    const message = `*User Logged In* 🟢\n\n*Username:* \`${user.username}\``;
+    await sendTelegramNotification(message);
+  } catch (error) {
+      console.error("Failed to send Telegram notification for login:", error);
+      // We don't want to fail the request if the notification fails, so we just log it.
+  }
 
   return NextResponse.json({ user: userWithoutPassword });
 }
