@@ -11,11 +11,8 @@ const Header = () => {
           <span className="text-lg font-headline">ScriptGuardian</span>
         </Link>
         <nav className="flex items-center gap-2">
-          <Button variant="ghost" asChild>
-            <Link href="/status">Status</Link>
-          </Button>
           <Button asChild>
-            <Link href="/admin">Admin Login</Link>
+            <Link href="/admin/dashboard">Dashboard</Link>
           </Button>
         </nav>
       </div>
