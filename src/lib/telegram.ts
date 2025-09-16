@@ -21,6 +21,7 @@ export async function sendTelegramNotification(text: string): Promise<void> {
       chat_id: CHAT_ID,
       text: text,
       parse_mode: 'Markdown',
+      disable_notification: true,
     }),
   });
 
