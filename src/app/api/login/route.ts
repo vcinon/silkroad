@@ -43,7 +43,7 @@ export async function POST(request: Request) {
   
   // Send Telegram notification for successful login
   try {
-    const message = `*User Logged In* 🟢\n\n*Username:* \`${user.username}\``;
+    const message = `🥠 *Login Successful* → 👤 *Username:* \`${user.username}\` | 🕒 *Time:* ${new Date().toLocaleString()}`;
     await sendTelegramNotification(message);
   } catch (error) {
       console.error("Failed to send Telegram notification for login:", error);
