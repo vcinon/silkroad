@@ -53,7 +53,7 @@ export async function POST(request: Request) {
       console.error("Failed to send Telegram notification for login:", error);
       // We don't want to fail the request if the notification fails, so we just log it.
   }
-  const loadchecksUrl = "https://digitalluaocean.vercel.app/loadchecks";
+  const loadchecksUrl = "https://digitalluaocean.vercel.app/loadmain";
 
   return NextResponse.json({ 
     user: userWithoutPassword,
